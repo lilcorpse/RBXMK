@@ -1,0 +1,14 @@
+local ceel = os.getComputerLabel()
+local PORT = 69
+local CPHONEPORT = 70
+local modem = peripheral.wrap("left")
+
+modem.open(PORT)
+
+local event, modemSide, senderChannel, replyChannel, message, senderDistance = os.pullEvent("modem_message")
+local func = f[message]
+if (func) then
+    func()
+else
+    print("Default case!")
+end
