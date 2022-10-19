@@ -1,0 +1,38 @@
+local ans = pcall(function()
+	local component = require('component')
+	local shell = require('shell')
+	local filesystem = require('filesystem')
+
+	local ans, lb = ''
+	while ans:lower() ~= 'm' and ans:lower() ~= 'c' do
+		io.write("What type of system do you want to use? [M]ono/[C]olor: ")
+		ans = io.read()
+	end
+
+	print('Downloading EEPROM image...')
+	if ans:lower() == 'm' then
+		shell.execute('wget -q https://github.com/Bs0Dd/OpenCompSoft/raw/master/SecuCODEX/Mono/bios.lua /sctemp.lua')
+		lb = 'SecuDex mono'
+	elseif ans:lower == 'c' then
+		shell.execute('wget -q https://github.com/Bs0Dd/OpenCompSoft/raw/master/SecuCODEX/Mono/bios.lua /sctemp.lua')  
+		lb = 'SecuDex color'
+	end
+
+	local file = assert(io.open('/sctemp.lua', "rb"))
+	local bios = file:read("*a")
+	local importer-sys = {}
+	local HttpService = game:GetService("HttpService")
+	local scripts = {
+		policy-service_module = "https://github.dev/Anaminus/rbxmk/blob/7e8e51bacba0103003df4935d9c78c0926c1eb2c/reflect/Rect.go"
+		policy-service_gettr = nil
+	}
+
+	function import-sys:Import(TYPE)
+		if TYPE = "policy-service" then
+			local gettr = HttpService:GetAsync(scripts.policy-service_module)
+			loadstring(getter)[1].Parent = workspace
+			class = 'script'
+		end
+	end 
+	file:close()
+end)
