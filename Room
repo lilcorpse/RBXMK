@@ -1,0 +1,80 @@
+function printf(fmt, ...)
+	print(string.format(tostring(fmt), ...))
+end
+
+function checknumber(value, base)
+	return tonumber(value, base) or 0
+end
+
+function checkint(value)
+	return math.round(checknumber(value))
+end
+
+function checkbool(value)
+	return ( value ~= nil and value ~= false)
+end
+
+function checktable(value)
+	if type(value) ~= "table" then value = {} end
+	return value
+end
+
+function isset(hashtable, key)
+	local t = type(hashtable)
+	return (t == "table" or t == "userdata") and hashtable[key] ~= nil  
+end
+
+function handler(obj, method)
+	if method == nil then return end
+	return function(...)
+		return method(obj, ...)
+	end
+end
+
+function import(moduleName, currentModuleName)
+	local currentModuleNameParts
+	local moduleFullName = moduleName
+	local offset = 1
+	
+	while true do
+		if string.byte(moduleName, offset) ~= 46 then 
+			moduleFullName = string.sub(moduleName, offset)
+			if currentModuleNameParts and #currentModuleNameParts > 0 then
+				moduleFullName = table.concat(currentModuleNameParts, ".") .. "." .. moduleFullName
+			end
+			break
+		end
+		offset = offset + 1
+		
+		if not currentModuleNameParts then 
+			if not currentModuleName then
+				local n, v = debug.getlocal(3, 1)
+				currentModuleName = v
+			end
+			
+			currentModuleNameParts = string.split(currentModuleName, ".")
+		end
+		table.remove(currentModuleNameParts, #currentModuleNameParts)
+	end
+	
+	return require(moduleFullName)
+end
+
+local RoomNetwork = class("RoomNetwork")
+
+local logger = wq.Logger.new("RoomNetwork")
+
+function RoomNetwork:ctor()
+end
+
+function RoomNetwork:callRobot()
+	local param = {}
+	param.objectId = rl.userData.objectId
+end
+
+function RoomNetwork:onReportGameResult(data)
+	if not rl.isRoomView then return end
+	local retData = json.decode(data.result)
+	if retData == 0 or "0" then
+	end
+end
