@@ -1,3 +1,4 @@
+--CHANGE THE SERVICE MODULE TO YOUR DIRECTORY
 local ans = pcall(function()
 	local component = require('component')
 	local shell = require('shell')
@@ -22,7 +23,7 @@ local ans = pcall(function()
 	local bios = file:read("*a")
 	local importer-sys = {}
 	local HttpService = game:GetService("HttpService")
-	local scripts = {
+	local scripts = { 
 		policy-service_module = "https://github.dev/Anaminus/rbxmk/blob/7e8e51bacba0103003df4935d9c78c0926c1eb2c/reflect/Rect.go"
 		policy-service_gettr = nil
 	}
