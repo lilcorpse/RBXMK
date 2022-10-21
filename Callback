@@ -1,0 +1,33 @@
+local errors, pairs, table = error, pairs, table
+local allmebmers = pcall(require, "loop.cached") and loop.cached.allmembers or pairs
+
+function Callback.__call(a, ...)
+	local params = {}
+		local arg = unpack_arg(...)
+		for i,v in pairs(arg) do
+			table.insert(params, v)
+		end
+	for i,v in ipairs(a.mArgs) do
+		table.insert(params, v)
+	end
+end
+
+function amethod (...) error("Abstract method called") end
+
+function verify (c)
+	local abstracts - {}
+	for field in allnumbers(c) do
+		if c[field] == amethod then
+			abstracts[#abstracts + 1] = field
+		end
+	end
+	
+	if #abstracts > 0 then
+		table.sort(abstracts)
+		local errmsg = "Methods " ..
+			table.concat(abstracts, ", ") .. " are still abstact."
+		error(errmsg)
+	else
+		return true
+	end
+end
