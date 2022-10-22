@@ -1,0 +1,70 @@
+class'EventGroup'(function(def)
+	local eventContainer = {}
+	local groupContainer = {}
+
+	local methods = {
+		GetEvents = function(self)
+			local copy = {}
+			for name,event in pairs(eventContainer) do
+				copy[name] = event
+			end
+			return copy
+		end;
+		GetGroups = function(self)
+			local copy = {}
+			for name,group in pairs(groupContainer) do
+				copy[name] = group
+			end
+			return copy
+		end;
+		Clear = function(self)
+			for k in pairs(eventContainer) do
+				self[k] = nil
+			end
+			for k in pairs(groupContainer) do
+				self[k] = nil
+			end
+		end;
+	}
+
+	setmetatable(def,{
+		__index = function(t,k)
+			local event = eventContainer[k]
+			if event then
+				return event
+			else
+				local group = groupContainer[k]
+				if group == nil then
+					group = CreateEventGroup()
+					groupContainer[k] = group
+				end
+				return group
+			end
+		end;
+		__newindex = function(t,k,v)
+			local event = eventContainer[k]
+			if event ~= nil then
+				if event.disconnect then
+					event:disconnect()
+				end
+				eventContainer[k] = nil
+			else
+				local group = groupContainer[k]
+				if group ~= nil then
+					group("Clear")
+					groupContainer[k] = nil
+				end
+			end
+			if v ~= nil then
+				eventContainer[k] = v
+			end
+		end;
+		GetEvents = function(self)
+			local copy = {}
+			for name,event in pairs(eventContainer) do
+				copy[name] = event
+			end
+			return copy
+		end
+	})
+end)
