@@ -1,0 +1,14 @@
+local function class(name)
+	local def = {}
+	getfenv(0)[name] = def
+	return function(ctor, static)
+		local nctor = function(...)
+			local this = {}
+			if ctor then
+				BeginEvent(ctor)
+				EndEvent(ctor)
+			end
+			return this
+		end
+	end
+end
