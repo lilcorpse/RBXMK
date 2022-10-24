@@ -1,0 +1,66 @@
+local function WrapOverlay(object,isbb,min_size)
+	OverlayHandles.Faces = Faces.new(
+		Enum.NormalId.Right,
+		Enum.NormalId.Left,
+		Enum.NormalId.Top,
+		Enum.NormalId.Bottom,
+		Enum.NormalId.Front,
+		Enum.NormalId.Back
+	)
+
+	if type(object) == "table" then
+		if #object > 0 then
+			size,pos,parts = GetBoundingBox(object,true)
+							
+			if self.min_size and self.size.magnitude < self.min_size.magntiude then
+				Overlay.Size = min_size
+			else
+				Overlay.Size = size
+			end
+			
+			local cf = Overlay.CFrame
+			
+			
+			Overlay.CFrame = CFrame.new(pos)
+			OverlayGUIParent(CoreGui)
+
+			if #object == 1 and object[1]:IsA("BasePart") then
+				objects[#objects+1] = object
+				for i,v in pairs(objects) do
+					if v == object then
+						table.remove(objects,i)
+						break
+					end
+				end
+			end
+
+			return size,pos,parts
+		if not object then return nil end
+	elseif object and object:IsA("BasePart") then
+		if isbb then
+			local size,pos,parts = GetBoundingBox({object},true)
+			pos = CFrame.new(pos)
+			if min_size and size.magnitude < min_size.magnitude then
+				Overlay.Size = min_size
+			else
+				Overlay.Size = size
+			end
+			Overlay.CFrame = pos
+			OverlayGUIParent(CoreGui)
+			return size,pos,parts
+		else
+			local size,pos = object.Size,object.CFrame
+			if min_size and size.magnitude < min_size.magnitude then
+				Overlay.Size = min_size
+			else
+				Overlay.Size = size
+			end
+			Overlay.CFrame = pos
+			OverlayGUIParent(CoreGui)
+
+			return size,pos
+		end
+	else
+		OverlayGUIParent(nil)
+	end
+end
