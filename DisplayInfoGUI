@@ -1,0 +1,21 @@
+local DisplayInfo do
+	local function NumFix(num,idp)
+		local mult = 10^(idp or 0)
+		return math.floor(num*mult + 0.5)/mult
+	end
+
+	function DisplayInfo(DoSetWaypoint, ...)
+		if DisplayInfoGUI then
+			local NewText = ""
+			local function quote(str) return str and string.format("%q", str) end
+
+			if DisplayInfoGUI.Text ~= NewText then
+				DisplayInfoGUI.Text = NewText
+
+				if DoSetWaypoint then
+					ChangeHistoryService:SetWaypoint("qCmdUtl: "..NewText .. tostring(tick())) -- Adding the tick() because our waypoints are SMART. None of this text-based filtering.
+				end
+			end
+		end
+	end
+end
