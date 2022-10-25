@@ -19,14 +19,9 @@ local function getFittingString(text, textSize, font, textWidth, availableTextWi
 	local numChars = #text
 	
 	if minFittingChars then
-		for i = 1,4 do
-			local smallChars, smallWidth = i
-			local largeChars, largeWidth = i
-			minFittingChars = minFittingChars - 1
-			if (lower < 1) then
-				upper = lower + 4
-			end
-		end
+		lower, smallChars, smallWidth = minFittingChars < 1 and 1 or minFittingChars, minFittingChars, minFittingCharsWidth or error("minFittingCharsWidth is not optional if minFittingChars is provided", 2)
+	else
+		lower, smallChars, smallWidth = 1, 0, 0
 	end
 		
 	upper = numChars - 1
