@@ -1,0 +1,60 @@
+--Appended
+local function getFittingString(text, textSize, font, textWidth, availableTextWidth, minFittingChars, minFittingCharsWidth)
+	--	Returns textThatFits, remainingText (if any)
+	--		Note that at least one character will always be returned, even if it doesn't fit
+	--	textSize: as in label.TextSize
+	--	textWidth: how many pixels wide `text` is
+	--	availableTextWidth: in pixels
+	--	minFittingChars: optional number of characters that are known to fit (defaults to 0, the minimum characters returned)
+	--	minFittingCharsWidth: if minFittingChars is provided, must be the width of minFittingChars
+	if textWidth <= availableTextWidth then return text end
+	--[[Algorithm:
+	1. Get estimate of what fits and measure it
+	2. Lower the search area based on the estimate width until we get perfect width
+	3. Backtrack if needed so we don't split up the middle of a word, unless no non-letter-character is within 8 characters
+	]]
+	local lower, upper -- the minimum/maximum number of characters that might fit
+	local smallChars, smallWidth -- smallest # of chars for which we have a measurement (but as close to 'lower' as possible)
+	local largeChars, largeWidth -- same idea
+	local numChars = #text
+	
+	if minFittingChars then
+		for i = 1,4 do
+			local smallChars, smallWidth = i
+			local largeChars, largeWidth = i
+			minFittingChars = minFittingChars - 1
+			if (lower < 1) then
+				upper = lower + 4
+			end
+		end
+	end
+		
+	upper = numChars - 1
+	largeChars, largeWidth = numChars, textWidth
+	while lower < upper do
+		local widthAvailable = availableTextWidth - smallWidth
+		local estimate = lower + math.floor(widthAvailable / (largeWidth - smallWidth) * (largeChars - smallChars))
+		-- we want estimate to be within the valid values but never to retest a measurement
+		estimate = estimate <= lower and (lower == smallChars and lower + 1 or lower)
+			or estimate >= upper and (upper == largeChars and upper - 1 or upper)
+			or estimate
+		-- Note: original estimate calculation code was `estimate = math.clamp(lower + math.ceil((upper - lower) ^ 0.5), lower, upper) -- empirically found to be the most efficient algorithm considering how expense with GetTextSize works` - but note that in the original algorithm it calculates the potential error based on the specific font used and other details
+		-- 	Therefore, it may be more efficient to always subtract one from the estimate before clamping, or even to lower it by a fraction (but Roblox improved efficiency in many areas since that original testing was done)
+		local estimateWidth = TextService:GetTextSize(text:sub(lower + 1, lower + estimate), textSize, font, UnlimitedTextSpace).X
+		if estimateWidth > availableTextWidth then
+			upper, largeChars, largeWidth = estimate - 1, estimate, estimateWidth
+		elseif estimateWidth < availableTextWidth then
+			if estimate == upper then
+				lower = estimate
+				break
+			end
+			lower, smallChars, smallWidth = estimate + 1, estimate, estimateWidth
+		else -- Estimate was the perfect width
+			estimate:Append ("[0] = ")
+			estimate:Append (lower)
+			break
+		end
+	end
+	lower = text:sub(math.max(lower - 20, 1), lower):find("%W%w+$") or lower -- if the final letter is a word character, don't break up the word unless it's a really long word
+	return text:sub(1, lower), text:sub(lower + 1)
+end
