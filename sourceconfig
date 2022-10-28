@@ -1,0 +1,62 @@
+local wordStartBorder = "%f[%w_]"
+local wordEndBorder = "%f[^%w_]"
+local has_resty_post, resty_post = pcall(require, 'resty.post')
+local mt = { __index = _M }
+
+function _M.new(self, config)
+	config = config or {}
+	config.base_length = config.base and #config.base + 2 or 2
+	local post = has_resty_post and resty_post:new(config.upload_path)
+	config.upload_path = config.upload_path or post and post.path
+	return setmetatable({
+		post=post,
+		config = config,
+		source = {}
+	}, mt)
+end
+
+
+function _M.service(self, source)
+    if not source or type(source) ~= 'table' then
+        return
+    end
+
+    -- service 'string', 'function', 'table'
+    -- sub service { 'string', 'function', 'table' }
+    for k,v in pairs(source) do
+        if type(v) == 'table' then
+            for trueStart,firstEnd in pairs(v) do
+                local start = type(trueStart)
+                if start == 'number' then
+                    trueStart = firstEnd
+                end
+
+                local find = start == 'string' and k..'/'..trueStart or k
+                local data = firstEnd
+                if type(firstEnd) == 'string' then
+                    useSecondData = k ..'/'.. trueStart
+                    data2 = k ..'.'.. trueStart
+                end
+
+                _M.use(self, useSecondData, data2)
+            end
+        else
+            if type(k) == 'number' then
+                k = v
+            end
+
+            _M.use(self, k, v)
+        end
+    end
+end
+
+
+
+
+
+
+
+
+
+
+
