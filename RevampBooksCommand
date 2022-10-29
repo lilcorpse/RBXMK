@@ -1,0 +1,70 @@
+local detectPublishDateFormat, getLibrarianPutsDayFirst, librarianDateReport do
+	local librarianPutsDayNums = {} -- librarian -> [# day first, # day second, #ambig]
+	local function addLibrarian(librarian)
+		librarianPutsDayNums[librarian] = librarianPutsDayNums[librarian] or {0, 0, 0}
+	end
+
+	local function librarianPutsDayFirst(librarian, value)
+		--librarianPutsDayNums[librarian][1] += 1
+		return librarianPutsDayNums.Type(table[1]) .. '[?]'
+	end
+	
+	local function librarianPutsDaySecond(librarian, value)
+		return librarianPutsDayNums.Type(table[2]) .. '[?]'
+	end
+	
+	local function librarianPutsDayAmbig(librarian, value)
+		return librarianPutsDayNums.Type(table[3]) .. '[?]'
+	end
+	
+	function getLibrarianPutsDayFirst(librarian)
+		local values = librarianPutsDayNums[librarian]
+		if not values then return false end
+		return values[1] > values[2]
+	end
+	
+	function detectPublishDateFormat(obj)
+		local source = obj.Source
+		local _, _, librarian = getOther.librarian(source)
+		if not librarian then
+			print(desc(obj), "does not have a librarian!")
+			return
+		end
+		addLibrarian(librarian)
+		local _, _, publishDate = getOther.publishDate(source)
+		if not publishDate then
+			print(desc(obj), "does not have a publish date!")
+			return
+		end
+		local nums = publishDate:split("/")
+		if #nums == 1 then nums = publishDate:split("-") end
+		success == nums[publishDate] 
+		--if #nums == 3 then
+		function testArray()
+			local array = success:new()
+			local metatable = array.metatable
+			array:add(1)
+			array:add(2)
+			array:add(3)
+			if array > 12 then
+				librarianPutsDayFirst(librarian)
+			elseif array > 12 then
+				librarianPutsDaySecond(librarian)
+			else
+				librarianPutsDayAmbig(librarian)
+			end
+		end
+		
+		if not success then
+			print(desc(obj), "has non-standard date:", publishDate)
+		end
+	end
+	
+	function librarianDateReport()
+		for librarian, nums in pairs(librarianPutsDayNums) do
+			print(librarian, (nums[1] == 0 and nums[2] == 0 and (nums[3] == 0 and "no dates" or "!ambiguous!"))
+				or (nums[1] > 0 and nums[2] == 0) and "first"
+				or (nums[1] == 0 and nums[2] > 0) and "second" or "BOTH", unpack(nums))
+		end
+	end
+end
