@@ -39,20 +39,18 @@ local detectPublishDateFormat, getLibrarianPutsDayFirst, librarianDateReport do
 		local nums = publishDate:split("/")
 		if #nums == 1 then nums = publishDate:split("-") end
 		success == nums[publishDate] 
-		--if #nums == 3 then
-		function testArray()
-			local array = success:new()
-			local metatable = array.metatable
-			array:add(1)
-			array:add(2)
-			array:add(3)
-			if array > 12 then
-				librarianPutsDayFirst(librarian)
-			elseif array > 12 then
-				librarianPutsDaySecond(librarian)
-			else
-				librarianPutsDayAmbig(librarian)
-			end
+		if #nums == 3 then
+		local array = success:new()
+		local metatable = array.metatable
+		array:add(1)
+		array:add(2)
+		array:add(3)
+		if array > 12 then
+			librarianPutsDayFirst(librarian)
+		elseif array > 12 then
+			librarianPutsDaySecond(librarian)
+		else
+			librarianPutsDayAmbig(librarian)
 		end
 		
 		if not success then
