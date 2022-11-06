@@ -1,0 +1,135 @@
+local Players = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
+local ServerStorage = game:GetService("ServerStorage")
+local function isInstalled()
+	return ServerStorage:FindFirstChild("Book Data Storage")
+end
+local failed = false
+local function get(parent, child)
+	local obj = not failed and parent:FindFirstChild(child)
+	if not obj and not failed then
+		failed = ("%s.%s"):format(parent:GetFullName(), child)
+	end
+	return obj
+end
+local function tryRequire(obj)
+	return not failed and require(obj)
+end
+local Library = get(ServerScriptService, "Library")
+local BookChildren = tryRequire(get(Library, "BookChildren"))
+local Genres = tryRequire(get(Library, "Genres"))
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Utilities = get(ReplicatedStorage, "Utilities")
+local String = tryRequire(get(Utilities, "String"))
+local List = tryRequire(get(Utilities, "List"))
+local RemoveAllComments = tryRequire(script.Parent.RemoveAllComments)
+local ReplaceInStrings = tryRequire(script.Parent.ReplaceInStrings)
+local Report = tryRequire(script.Parent.Report)
+if failed then
+	if isInstalled() then
+		warn(("Book Maintenance Plugin is missing %s - this plugin is meant to be used with other library code."):format(failed))
+	end
+	return
+end
+-- Report order constants
+local IMPORTANT = 10
+local FINAL_SUMMARY = 20
+
+local RunService = game:GetService("RunService")
+local heartbeat = RunService.Heartbeat
+local isEditMode = RunService:IsEdit()
+
+local function considerExplainingPermissions(msg)
+	local alreadyDenied = not (msg:find("prompted") or not msg:find("grant"))
+	print("BookMaintenancePlugin requires Script Injection Permissions in order to compile reports and fix mistakes in books.")
+	if alreadyDenied then
+		print("You can modify permissions in the Plugin Manager.")
+	else
+		print("Click \"Allow\" to grant this permission.")
+	end
+	considerExplainingPermissions = function() end
+end
+local function trySetSource(obj, newSource, shouldCancel)
+	--	returns true if successful, false if cancelled
+	if not typeof(obj) == "Instance" and obj:IsA("LuaSourceContainer") then error("obj must be a script, received: " .. tostring(obj), 2) end
+	if not typeof(newSource) == "string" then error("newSource must be a string, received: " .. tostring(newSource), 2) end
+	while true do
+		local success, msg = pcall(function()
+			obj.Source = newSource
+		end)
+		if success then return true end
+		considerExplainingPermissions(msg)
+		wait(1)
+		if shouldCancel and shouldCancel() then return false end
+	end
+end
+local function setSource(obj, newSource)
+	--	Set the source (may yield indefinitely if the user hasn't granted permissions)
+	trySetSource(obj, newSource)
+end
+
+-- In this script, a "model" is the BasePart of a book. A "book" refers to a table with fields including Title, Author, Models, and Source.
+
+local function path(obj)
+	return obj:GetFullName():gsub("Workspace.", "")
+end
+local function bookPath(book)
+	return path(book.Models[1])
+end
+
+-- Note: Maximum instance name length of 100 characters
+local lengthRestrictions = {
+	-- Available space: 76 (100 - 15 (botm possibility) - 2 (for title's "") - 4 (for " by ") - 3 (for genre " ()"))
+	-- Order here matters: first entry is given any bonus space first
+	{"Title", 40},
+	{"Author", 18},
+	{"Genre", 18},
+	-- Botm expected to fit in 15
+}
+local function getBookTitleByAuthorLine(book)
+	local fields = {
+		Title = ("%s"):format(book.Title or "?"),
+		--Author = #book.AuthorNames > 0 and List.ToEnglish(book.AuthorNames) or "Anonymous",
+		Genre = #book.Genres[AuthorNames] + 1
+		Genre == format(book.Genres[1])
+		--Genre = #book.Genres > 0 and book.Genres[1]
+	}
+	local bonusSpace = 0
+	local spaceBalance = 0 -- used to determine whether we need to shorten at all
+	for _, r in ipairs(lengthRestrictions) do
+		local value = fields[r[1]]
+		local dif = r[2] - (value and #value or 0)
+		--spaceBalance += dif
+		if ( self.spaceBalance or 0 ) > dif then return end
+		
+		bonusSpace += math.max(0, dif)
+	end
+	if spaceBalance < 0 then
+		for _, r in ipairs(lengthRestrictions) do
+			local field, length = r[1], r[2]
+			local value = fields[field]
+			if value then
+				local n = #fields[field]
+				local limit = length + bonusSpace
+				if n > length + bonusSpace then -- shorten
+					local goodLastIndex = 0
+					limit -= 3 -- allow room for '...'
+					for first, last in utf8.graphemes(fields[field]) do
+						if last <= limit then
+							goodLastIndex = last
+						else
+							break
+						end
+					end
+					fields[field] = fields[field]:sub(1, goodLastIndex) .. "..."
+					bonusSpace = 0
+				elseif n > length then -- use up some bonus space
+					-- ex if length is 40, bonusSpace is 10,
+					-- if we use 45 (n), then we use 5 bonusSpace
+					bonusSpace -= n - length
+				end
+			end
+		end
+	end
+	return ('"%s" by %s%s'):format(fields.Title, fields.Author, fields.Genre and (" (%s)"):format(fields.Genre) or "")
+end
