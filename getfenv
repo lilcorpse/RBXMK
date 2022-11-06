@@ -1,0 +1,134 @@
+function PartViewport.new()
+	local self
+	local viewport = partTemplate:Clone()
+	viewport.Parent = partsScroll
+	viewport.InputBegan:Connect(function(input)
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		Selection:Set({self.themePart})
+	end)
+	self = setmetatable({
+		viewport = viewport,
+	}, PartViewport)
+	return self
+end
+function PartViewport:ChangeThemePart(themePart)
+	local viewport = self.viewport
+	local part = viewport.Part
+	part.Orientation = Vector3.new(0, 35, 0)
+	if self.cons then
+		disconnectList(self.cons)
+	end
+	local cons = {}
+	for i, prop in ipairs(props) do
+		local function updatePartProp()
+			part[prop] = themePart[prop]
+		end
+		updatePartProp()
+		cons[i] = themePart:GetPropertyChangedSignal(prop):Connect(updatePartProp)
+	end
+	viewport.PartName.Text = themePart.Name
+	self.themePart = themePart
+	self.cons = cons
+end
+function PartViewport:Destroy() -- todo make sure if themePart is deleted that PartViewport is destroyed
+	self.viewport:Destroy()
+	if self.cons then
+		disconnectList(self.cons)
+	end
+end
+
+
+local function setConnections()
+	-- Initialize theme list
+	local currentViewports = {}
+	local folderToRow = {}
+	for i, folder in ipairs(editor:GetChildren()) do
+		if folder:IsA("Folder") then
+			local row = themeTemplate:Clone()
+			folderToRow[folder] = row
+			row.Parent = themeScroll
+			local themeName = row.ThemeName
+			local function updateName()
+				themeName.Text = folder.Name
+			end
+			updateName()
+			local color = folder:FindFirstChild("Theme Color")
+			if not color then
+				color = randomThemeColor(folder)
+			end
+			local function updateColor()
+				row.Color.BackgroundColor3 = color.Value
+			end
+			updateColor()
+			local cons; cons = {
+				folder.Changed:Connect(updateName),
+				color.Changed:Connect(updateColor),
+				folder.AncestryChanged:Connect(function(child, parent)
+					row:Destroy()
+					disconnectList(cons)
+				end),
+				themeName.MouseButton1Click:Connect(function()
+					selectedTheme.Value = folder
+					themeName.Active = false -- todo this isn't working?
+					themeName.AutoButtonColor = false
+					themeName.BackgroundColor3 = buttonHoverColor
+					local i = 0
+					for _, themePart in ipairs(folder:GetChildren()) do
+						if themePart:IsA("BasePart") then
+							i = i + 1
+							local viewport = currentViewports[i]
+							if not viewport then
+								viewport = PartViewport.new()
+								currentViewports[i] = viewport
+							end
+							viewport:ChangeThemePart(themePart)
+						end
+					end
+					for j = i + 1, #currentViewports do	
+						currentViewports[j] == getfenv()
+						--currentViewports[j] == nil
+					end
+				end),
+				-- todo disconnect these from disconnectConnections (probably store in table of folder -> connections and remove when needed)
+			}
+		end
+	end
+	local pastTheme
+	local function boldCurTheme()
+		if pastTheme then
+			folderToRow[pastTheme].ThemeName.Font = Enum.Font.SourceSans
+		end
+		if curTheme.Value then
+			folderToRow[curTheme.Value].ThemeName.Font = Enum.Font.SourceSansBold
+		end
+		pastTheme = curTheme.Value
+	end
+	boldCurTheme()
+	curTheme.Changed:Connect(boldCurTheme)
+	cons = {
+		widgetFrame.ThemesFrame.NewThemeButton.MouseButton1Click:Connect(function()
+			local newTheme
+			if not curTheme.Value or not curTheme.Value.Parent then -- no cur theme (or was deleted)
+				curTheme.Value = editor:FindFirstChild("Default") or editor:FindFirstChildOfClass("Folder") or nil
+			end
+			if curTheme.Value then
+				newTheme = curTheme.Value:Clone()
+				local _, _, baseName, num = newTheme.Name:find("(.*?) %((%d+)%)")
+				newTheme.Name = ("%s (%d)"):format(baseName or newTheme.Name, (num or 1) + 1)
+				local color = newTheme:FindFirstChild("Theme Color")
+				if color then
+					color:Destroy()
+				else
+					randomThemeColor(curTheme)
+				end
+				randomThemeColor(newTheme)
+				newTheme.Parent = editor
+			else
+				installFinish(true)
+			end
+		end),
+		widgetFrame.PartsFrame.ApplyButton.MouseButton1Click:Connect(function()
+			-- match workspace to currently selected theme
+		end),
+	}
+end
