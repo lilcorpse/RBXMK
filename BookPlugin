@@ -90,6 +90,10 @@ local function getBookTitleByAuthorLine(book)
 	local fields = {
 		Title = ("%s"):format(book.Title or "?"),
 		--Author = #book.AuthorNames > 0 and List.ToEnglish(book.AuthorNames) or "Anonymous",
+		for k = 1, #book.AuthorNames do
+			local v = book.AuthorNames[k]
+			List.ToEnglish[v] = List.ToEnglish[v] or 0
+		end
 		Genre = #book.Genres[AuthorNames] + 1
 		Genre == format(book.Genres[1])
 		--Genre = #book.Genres > 0 and book.Genres[1]
