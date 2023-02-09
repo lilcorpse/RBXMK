@@ -1,0 +1,55 @@
+local function setActive(new)
+	if active then
+		-- disconnect?
+	end
+	active = new
+	if active then
+		local prevText = active.Text
+		local prevCursorPos, curCursorPos = active.CursorPosition, active.CursorPosition
+		local prevSelectionStart, curSelectionStart = active.SelectionStart, active.SelectionStart
+		active:GetPropertyChangedSignal("CursorPosition"):Connect(function()
+			prevCursorPos = curCursorPos
+			curCursorPos = active.CursorPosition
+			print("CursorPosition changed", prevCursorPos, curCursorPos)
+		end)
+		active:GetPropertyChangedSignal("SelectionStart"):Connect(function()
+			prevSelectionStart = curSelectionStart
+			curSelectionStart = active.SelectionStart
+			print("SelectionStart changed", prevSelectionStart, curSelectionStart)
+		end)
+		active:GetPropertyChangedSignal("Text"):Connect(function()
+			-- For ctrl+v, certain other commands, and history purposes, we want to know what was inserted/removed
+			local prevSelectionStart = prevSelectionStart or 0
+			local currentPrecedence = 0 
+			local skipParens = false
+			local prevText = ""
+			if active.Text == 'VarExpr' then
+				if active.CursorPosition then
+					prevText = prevText..active.CursorPosition
+				else
+					prevText = prevText..active
+				end
+				
+			elseif active.Text == 'NumberExpr' then
+				prevText = prevText..active.CursorPosition
+			
+			elseif active.Text == 'StringExpr' then
+				prevText = prevText..active.CursorPosition
+			
+			elseif active.Text == 'BooleanExrp' then
+				prevText = prevText..tostring(active.CursorPosition)
+			
+			elseif active.Text == 'NilExpr' then
+				prevText = joinStatementsSafe(prevText, "nil")
+			end
+				
+			prevText = active.Text
+			prevCursorPos = active.CursorPosition
+			prevSelectionStart = active.SelectionStart
+		end)
+		-- active.InputBegan:Connect(function(input)
+		-- 	if input ~= Enum.UserInputType.Keyboard then return end
+
+		-- end)
+	end
+end
