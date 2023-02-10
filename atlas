@@ -1,0 +1,347 @@
+local VERSION = "1.1"
+
+-- added true/false returns
+
+if not LPH_OBFUSCATED then
+	local function table_equals(o1, o2)
+	if o1 == o2 then return true end
+	local o1Type = type(o1)
+	local o2Type = type(o2)
+	if o1Type ~= o2Type then return false end
+	if o1Type ~= 'table' then return false end	
+	
+	local keySet = {}
+	
+	for key1, value1 in pairs(o1) do
+		local value2 = o2[key1]
+		if value2 == nil or table_equals(value1, value2) == false then
+			return false
+		end
+		keySet[key1] = true
+	end
+	
+	for key2 in pairs(o2) do
+		if not keySet[key2] then return false end
+	end
+	return true	
+end
+
+-- SERVICES
+local Players = game:GetService("Players")
+local TS = game:GetService("TweenService")
+local Run = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Core = game:GetService("CoreGui")
+local MP = game:GetService("MarketplaceService")
+
+-- VARIABLES
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- CLASSES
+local Library = {}
+local Page = {}
+local Section = {}
+local Element = {}
+
+Library.__index = Library
+Page.__index = Page
+Section.__index = Section
+Element.__index = Element
+
+-- CONSTANTS
+local GameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+
+-- ICONS
+Library.Icons = {
+    ["Warning"] = 11110093949;
+    ["Info"] = 11109991278;
+    ["Error"] = 11109992284
+}
+
+local old_warn = warn
+local warn = function(...)
+    old_warn("[ATLAS]",...)
+end
+
+-- UTILITY
+local utility = {}
+
+do
+    function utility.BlankFunction()
+    end
+
+    function utility:Lerp(start,goal,alpha)
+        return start+(goal-start)*alpha
+    end
+
+    function utility:Warn(...)
+        warn("ARTEMIS:", ...)
+    end
+
+    function utility:Wait()
+        return Run.RenderStepped:Wait()
+    end
+
+    function utility:Disconnect(connection)
+        pcall(function()
+            connection:Disconnect()
+        end)
+    end
+
+    function utility:HandleGradientButton(element,callback)
+        element.Active = true
+        local button = element
+        local gradient = element:FindFirstChildOfClass("UIGradient")
+
+        button.InputBegan:Connect(function(input)
+            if input.UserInputType==Enum.UserInputType.MouseButton1 then
+                gradient.Rotation = 90
+            end
+        end)
+
+        button.MouseLeave:Connect(function()
+            gradient.Rotation = -90
+        end)
+
+        local con = UIS.InputEnded:Connect(function(input)
+            if input.UserInputType==Enum.UserInputType.MouseButton1 then
+                if gradient.Rotation == 90 then
+                    coroutine.wrap(callback)()
+                end
+                gradient.Rotation = -90
+            end
+        end)
+
+        return con -- for proper destroying and to prevent memory leaks
+    end
+
+    function utility:FormatNumber(number,decimalPlaces)
+        if not typeof(number)=="number" then
+            error("Arg 1 must be a number")
+        end
+        decimalPlaces = math.clamp(decimalPlaces,0,math.huge)
+        local exp = 10^decimalPlaces
+        number = math.round(number*exp)/exp
+        local formatted = number
+        LPH_JIT_MAX(function()
+            while true do
+                local k
+                formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+                if (k==0) then
+                    break
+                end
+            end
+        end)()
+        return formatted
+    end
+
+    function utility:IsPadding(element)
+        return element:IsA("Frame") and string.lower(element.Name):find("padding")
+    end
+
+    function utility:DoClickEffect(element)
+        local function makeEffect()
+            -- Generated using RoadToGlory's Converter v1.1 (RoadToGlory#9879)
+            local Converted = {
+                ["__buttonEffect"] = Instance.new("Frame");
+                ["_ImageLabel"] = Instance.new("ImageLabel");
+            }
+
+            --Properties
+
+            Converted["__buttonEffect"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Converted["__buttonEffect"].BackgroundTransparency = 1
+            Converted["__buttonEffect"].ClipsDescendants = true
+            Converted["__buttonEffect"].Size = UDim2.new(1, 0, 1, 0)
+            Converted["__buttonEffect"].ZIndex = 0
+            Converted["__buttonEffect"].Name = "_buttonEffect"
+
+            Converted["_ImageLabel"].Image = "http://www.roblox.com/asset/?id=10261338527"
+            Converted["_ImageLabel"].ImageRectSize = Vector2.new(200, 200)
+            Converted["_ImageLabel"].ImageTransparency = 0.8999999761581421
+            Converted["_ImageLabel"].ScaleType = Enum.ScaleType.Crop
+            Converted["_ImageLabel"].AnchorPoint = Vector2.new(0.5, 0.5)
+            Converted["_ImageLabel"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Converted["_ImageLabel"].BackgroundTransparency = 1
+            Converted["_ImageLabel"].Position = UDim2.new(0, 0, 0, 0)
+            Converted["_ImageLabel"].Size = UDim2.new(0, 0, 1, 0)
+            Converted["_ImageLabel"].Parent = Converted["__buttonEffect"]
+
+            return Converted["__buttonEffect"]
+        end
+
+        local effect = makeEffect()
+        effect.Parent = element
+
+        local corner = element:FindFirstChildOfClass("UICorner")
+        if corner then
+            corner:Clone().Parent = effect
+        end
+
+        local tweenInfo = TweenInfo.new(0.5,Enum.EasingStyle.Linear,Enum.EasingDirection.In,0,false,0)
+
+        local realAbsPosition = Vector2.new(element.AbsolutePosition.X-(element.AbsoluteSize.X*element.AnchorPoint.X),element.AbsolutePosition.Y-(element.AbsoluteSize.Y*element.AnchorPoint.Y))
+        local relative = Vector2.new(mouse.X,mouse.Y)-realAbsPosition
+
+        effect.ImageLabel.Position = UDim2.new(0,relative.X,0.5,0)
+        effect.ImageLabel.ImageRectOffset = Vector2.new(0,-relative.Y)
+
+        local tween = TS:Create(effect.ImageLabel,tweenInfo,{
+            ["Size"] = UDim2.new(0,375,1,0);
+            ["ImageTransparency"] = 1;
+        })
+
+        tween:Play()
+
+        tween.Completed:Connect(function()
+            effect:Destroy()
+        end)
+
+        return tween
+    end
+
+    function utility:GetColor(percentage, ColorKeyPoints)
+        if (percentage < 0) or (percentage>1) then
+            utility:Warn('getColor got out of bounds percentage (less than 0 or greater than 1')
+        end
+        
+        local closestToLeft = ColorKeyPoints[1]
+        local closestToRight = ColorKeyPoints[#ColorKeyPoints]
+        local LocalPercentage = .5
+        local color = closestToLeft.Value
+        
+        -- This loop can probably be improved by doing something like a Binary search instead
+        -- This should work fine though
+        for i=1,#ColorKeyPoints-1 do
+            if (ColorKeyPoints[i].Time <= percentage) and (ColorKeyPoints[i+1].Time >= percentage) then
+                closestToLeft = ColorKeyPoints[i]
+                closestToRight = ColorKeyPoints[i+1]
+                LocalPercentage = (percentage-closestToLeft.Time)/(closestToRight.Time-closestToLeft.Time)
+                color = closestToLeft.Value:lerp(closestToRight.Value,LocalPercentage)
+                return color
+            end
+        end
+        utility:Warn('Color not found!')
+        return color
+    end
+
+    function utility:CreateButtonObject(obj)
+        -- Generated using RoadToGlory's Converter v1.1 (RoadToGlory#9879)
+        local Converted = {
+            ["_Button"] = Instance.new("TextButton");
+        }
+
+        --Properties
+
+        Converted["_Button"].Font = Enum.Font.SourceSans
+        Converted["_Button"].Text = ""
+        Converted["_Button"].TextColor3 = Color3.fromRGB(0, 0, 0)
+        Converted["_Button"].TextSize = 14
+        Converted["_Button"].AnchorPoint = Vector2.new(0.5, 0.5)
+        Converted["_Button"].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Converted["_Button"].BackgroundTransparency = 1
+        Converted["_Button"].Position = UDim2.new(0.5, 0, 0.5, 0)
+        Converted["_Button"].Size = UDim2.new(1, 0, 1, 0)
+        Converted["_Button"].Name = "Button"
+        Converted["_Button"].Parent = obj -- modified
+
+        return Converted["_Button"]
+    end
+
+    function utility:CreateHint()
+        -- Generated using RoadToGlory's Converter v1.1 (RoadToGlory#9879)
+        local Converted = {
+            ["_Hint"] = Instance.new("StringValue");
+        }
+
+        --Properties
+
+        Converted["_Hint"].Value = "Hint"
+        Converted["_Hint"].Name = "Hint"
+
+        return Converted["_Hint"]
+    end
+
+    function utility:GetPlayerThumbnail(UserId)
+        return "rbxthumb://type=AvatarHeadShot&id="..UserId.."&w=420&h=420"
+    end
+
+    function utility:GetGameThumbnail(placeId) -- use in studio
+        local thumbnailId = MP:GetProductInfo(placeId).IconImageAssetId
+        return "rbxassetid://"..thumbnailId
+    end
+
+    function utility:SetModal(obj)
+        local m = Instance.new("TextButton")
+        m.Text = ""
+        m.BackgroundTransparency = 1
+        m.Modal = true
+        m.TextTransparency = 1
+        m.Size = UDim2.fromOffset(1,1)
+        m.ZIndex = -25
+        m.Visible = true
+        m.Active = true
+        m.AutoButtonColor = false
+        m.Name = "__modal"
+        m.Parent = obj
+        return obj
+    end
+
+    function utility:Tween(object,properties,duration,...)
+        assert(object and properties and duration,"Missing arguments for utility::Tween")
+        local tween = TS:Create(object,TweenInfo.new(duration,...),properties)
+        tween:Play()
+        return tween
+    end
+
+    function utility:GetTextContrast(color)
+        local r,g,b = color.R*255,color.G*255,color.B*255
+        return (((r * 0.299) + (g * 0.587) + (b * 0.114)) > 150) and Color3.new(0,0,0) or Color3.new(1,1,1)
+    end
+
+    function utility:InitDragging(frame,button)
+        button = button or frame
+
+        assert(button and frame,"Need a frame in order to start dragging")
+
+        -- dragging
+        local _dragging = false
+        local _dragging_offset
+
+        local inputBegan = button.MouseButton1Down:Connect(function()
+            _dragging = true
+            _dragging_offset = Vector2.new(mouse.X,mouse.Y)-frame.AbsolutePosition
+        end)
+
+        local inputEnded = mouse.Button1Up:Connect(function()
+            _dragging = false
+            _dragging_offset = nil
+        end)
+
+        local updateEvent
+        LPH_JIT_MAX(function()
+            updateEvent = Run.RenderStepped:Connect(function()
+                if frame.Visible == false or not UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                    _dragging = false
+                    _dragging_offset = nil
+                end
+                if _dragging and _dragging_offset then
+                    frame.Position = UDim2.fromOffset(mouse.X-_dragging_offset.X+(frame.AbsoluteSize.X*frame.AnchorPoint.X),mouse.Y-_dragging_offset.Y+36+(frame.AbsoluteSize.Y*frame.AnchorPoint.Y))
+                end
+            end)
+        end)()
+
+        return {inputBegan,inputEnded,updateEvent}
+    end
+
+    function utility:HandleButton(button,callback)
+        
+    end
+
+    function utility:Requirement(arg,errorResponse)
+        if not arg then
+            error(errorResponse)
+        end
+    end
+end
