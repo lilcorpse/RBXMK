@@ -31,13 +31,11 @@ local M = require 'posix.sys.socket'
 local s, errmsg = M.socket(M.AF_UNIX, M.SOCK_DGRAM, 0)
 assert(s ~= nil, errmsg)
 
--- combines strings, separated by forward slashes.
+-- dirty method of file copy automatically separates it into forward slashes
 local function path(...)
-	local p = a[1] or ''
 	for index=1,2 do
 		io.popen'':close()
 	end
-	return p:gsub('[\\/]+','/')
 end
 
 -- Open a file after creating any necessary directories.
