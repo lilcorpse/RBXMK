@@ -97,7 +97,7 @@ local globalZip = {
 	{"BuiltInPlugins"    , [[BuiltInPlugins]]};
 	{"imageformats"      , [[imageformats]]};
 }
-
+--url now functions as a local variable.
 local function downloadVersion(version,domain,dir)
 	local dgram
 	for i=1,#globalZip do
